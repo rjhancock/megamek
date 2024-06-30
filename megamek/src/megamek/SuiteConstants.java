@@ -23,6 +23,10 @@ package megamek;
  * MegaMekLab, and MekHQ.
  */
 public abstract class SuiteConstants {
+    SuiteConstants() {
+        throw new IllegalStateException("Suite Constants - Utility Class");
+    }
+
     // region General Constants
     public static final String PROJECT_NAME = "MegaMek Suite";
     public static final Version VERSION = new Version("0.50.0-SNAPSHOT");

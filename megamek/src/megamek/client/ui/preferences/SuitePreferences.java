@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 - The MegaMek Team. All Rights Reserved.
+ * Copyright (c) 2019-2024 - The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MegaMek.
  *
@@ -21,6 +21,10 @@ package megamek.client.ui.preferences;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonGenerator.Feature;
+
+import megamek.ErrorConstants;
+import megamek.LoggingConstants;
+
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import org.apache.logging.log4j.LogManager;
@@ -34,37 +38,41 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 public class SuitePreferences {
-    //region Variable Declarations
+    // region Variable Declarations
     private static final String PREFERENCES_TOKEN = "preferences";
     private static final String CLASS_TOKEN = "class";
     private static final String ELEMENTS_TOKEN = "elements";
     private static final String NAME_TOKEN = "element";
     private static final String VALUE_TOKEN = "value";
     private final Map<String, PreferencesNode> nameToPreferencesMap;
-    //endregion Variable Declarations
+    // endregion Variable Declarations
 
-    //region Constructors
+    // region Constructors
     public SuitePreferences() {
         nameToPreferencesMap = new HashMap<>();
     }
-    //endregion Constructors
+    // endregion Constructors
 
-    //region Getters/Setters
+    // region Getters/Setters
     public Map<String, PreferencesNode> getNameToPreferencesMap() {
         return nameToPreferencesMap;
     }
-    //endregion Getters/Setters
+    // endregion Getters/Setters
 
     public PreferencesNode forClass(final Class<?> classToManage) {
-        return getNameToPreferencesMap().computeIfAbsent(classToManage.getName(), c -> new PreferencesNode(classToManage));
+        return getNameToPreferencesMap().computeIfAbsent(classToManage.getName(),
+                c -> new PreferencesNode(classToManage));
     }
 
-    //region Write To File
+    // region Write To File
     public void saveToFile(final String filePath) {
-        LogManager.getLogger().debug("Saving nameToPreferencesMap to: " + filePath);
+        if (LogManager.getLogger().isDebugEnabled()) {
+            LogManager.getLogger().debug(String.format(LoggingConstants.SUITE_PREFERENCES_SAVING, filePath));
+        }
+
         final JsonFactory factory = new JsonFactory();
         try (FileOutputStream output = new FileOutputStream(filePath);
-             JsonGenerator writer = factory.createGenerator(output).useDefaultPrettyPrinter()) {
+                JsonGenerator writer = factory.createGenerator(output).useDefaultPrettyPrinter()) {
             writer.enable(Feature.STRICT_DUPLICATE_DETECTION);
 
             writer.writeStartObject();
@@ -79,16 +87,18 @@ public class SuitePreferences {
             writer.writeEndArray();
             writer.writeEndObject();
         } catch (FileNotFoundException ex) {
-            LogManager.getLogger().error("Could not save nameToPreferencesMap to: " + filePath, ex);
+            LogManager.getLogger().error(
+                    String.format(ErrorConstants.SUITE_PREFERENCES_COULD_NOT_SAVE, filePath), ex);
         } catch (IOException ex) {
-            LogManager.getLogger().error("Error writing to the nameToPreferencesMap file: " + filePath, ex);
+            LogManager.getLogger().error(
+                    String.format(ErrorConstants.SUITE_PREFERENCES_ERROR_WRITING, filePath), ex);
         } catch (Exception ex) {
             LogManager.getLogger().error("", ex);
         }
     }
 
     private static void writePreferencesNode(final JsonGenerator writer,
-                                             final Entry<String, PreferencesNode> nodeInfo)
+            final Entry<String, PreferencesNode> nodeInfo)
             throws Exception {
         writer.writeStartObject();
         writer.writeStringField(CLASS_TOKEN, nodeInfo.getKey());
@@ -105,24 +115,30 @@ public class SuitePreferences {
     }
 
     private static void writePreferenceElement(final JsonGenerator writer,
-                                               final Map.Entry<String, String> element) throws IOException {
+            final Map.Entry<String, String> element) throws IOException {
         writer.writeStartObject();
         writer.writeStringField(NAME_TOKEN, element.getKey());
         writer.writeStringField(VALUE_TOKEN, element.getValue());
         writer.writeEndObject();
     }
-    //endregion Write To File
+    // endregion Write To File
 
-    //region Load From File
+    // region Load From File
     public void loadFromFile(final String filePath) {
-        LogManager.getLogger().info("Loading user preferences from: " + filePath);
+        if (LogManager.getLogger().isInfoEnabled()) {
+            LogManager.getLogger().info(
+                    String.format(LoggingConstants.SUITE_PREFERENCES_LOADING, filePath));
+        }
+
         final JsonFactory factory = new JsonFactory();
         try (FileInputStream input = new FileInputStream(filePath);
-             JsonParser parser = factory.createParser(input)) {
+                JsonParser parser = factory.createParser(input)) {
             if (parser.nextToken() != JsonToken.START_OBJECT) {
                 throw new IOException("Expected an object start ({)" + getParserInformation(parser));
-            } else if ((parser.nextToken() != JsonToken.FIELD_NAME) && !parser.getCurrentName().equals(PREFERENCES_TOKEN)) {
-                throw new IOException("Expected a field called (" + PREFERENCES_TOKEN + ')' + getParserInformation(parser));
+            } else if ((parser.nextToken() != JsonToken.FIELD_NAME)
+                    && !parser.currentName().equals(PREFERENCES_TOKEN)) {
+                throw new IOException(
+                        "Expected a field called (" + PREFERENCES_TOKEN + ')' + getParserInformation(parser));
             } else if (parser.nextToken() != JsonToken.START_ARRAY) {
                 throw new IOException("Expected an array start ([)" + getParserInformation(parser));
             }
@@ -132,33 +148,38 @@ public class SuitePreferences {
                 try {
                     readPreferencesNode(parser, getNameToPreferencesMap());
                 } catch (IOException e) {
-                    LogManager.getLogger().error("Error reading node. " + getParserInformation(parser), e);
+                    LogManager.getLogger().error(
+                            String.format(ErrorConstants.SUITE_PREFERENCES_ERROR_READING_NODE,
+                                    getParserInformation(parser)),
+                            e);
                 }
             }
         } catch (FileNotFoundException ignored) {
-
+            LogManager.getLogger().info(ErrorConstants.SUITE_PREFERENCES_ERROR_NOT_FOUND);
         } catch (Exception e) {
-            LogManager.getLogger().error("Error reading from the user preferences file: " + filePath, e);
+            LogManager.getLogger().error(
+                    String.format(ErrorConstants.SUITE_PREFERENCES_ERROR_READING_FILE, filePath), e);
         }
     }
 
     private static String getParserInformation(final JsonParser parser) throws IOException {
-        return (parser == null) ? "" : ". Current token: " + parser.getCurrentName() +
-                ". Line number: " + parser.getCurrentLocation().getLineNr() +
-                ". Column number: " + parser.getCurrentLocation().getColumnNr();
+        return (parser == null) ? ""
+                : ". Current token: " + parser.currentName() +
+                        ". Line number: " + parser.currentLocation().getLineNr() +
+                        ". Column number: " + parser.currentLocation().getColumnNr();
     }
 
     private static void readPreferencesNode(final JsonParser parser,
-                                            final Map<String, PreferencesNode> nodes) throws IOException {
+            final Map<String, PreferencesNode> nodes) throws IOException {
         if (parser.currentToken() != JsonToken.START_OBJECT) {
             return;
-        } else if ((parser.nextToken() != JsonToken.FIELD_NAME) && !parser.getCurrentName().equals(CLASS_TOKEN)) {
+        } else if ((parser.nextToken() != JsonToken.FIELD_NAME) && !parser.currentName().equals(CLASS_TOKEN)) {
             return;
         }
 
         final String className = parser.nextTextValue();
 
-        if ((parser.nextToken() != JsonToken.FIELD_NAME) && !parser.getCurrentName().equals(ELEMENTS_TOKEN)) {
+        if ((parser.nextToken() != JsonToken.FIELD_NAME) && !parser.currentName().equals(ELEMENTS_TOKEN)) {
             return;
         } else if (parser.nextToken() != JsonToken.START_ARRAY) {
             return;
@@ -171,7 +192,8 @@ public class SuitePreferences {
             try {
                 readPreferenceElement(parser, elements);
             } catch (IOException e) {
-                LogManager.getLogger().warn("Error reading elements for node: " + className + ".", e);
+                LogManager.getLogger().warn(
+                        String.format(ErrorConstants.SUITE_PREFERENCES_ERROR_READING_ELEMENT, className), e);
             }
         }
 
@@ -180,22 +202,24 @@ public class SuitePreferences {
             node.initialize(elements);
             nodes.put(node.getNode().getName(), node);
         } catch (ClassNotFoundException ex) {
-            LogManager.getLogger().error("No class with name " + className + " found", ex);
+            LogManager.getLogger().error(
+                    String.format(ErrorConstants.SUITE_PREFERENCES_ERROR_CLASS_NOT_FOUND, className), ex);
         } catch (Exception ex) {
             LogManager.getLogger().error("", ex);
         }
     }
 
-    private static void readPreferenceElement(final JsonParser parser, final Map<String, String> elements) throws IOException {
+    private static void readPreferenceElement(final JsonParser parser, final Map<String, String> elements)
+            throws IOException {
         if (parser.currentToken() != JsonToken.START_OBJECT) {
             return;
-        } else if ((parser.nextToken() != JsonToken.FIELD_NAME) && !parser.getCurrentName().equals(NAME_TOKEN)) {
+        } else if ((parser.nextToken() != JsonToken.FIELD_NAME) && !parser.currentName().equals(NAME_TOKEN)) {
             return;
         }
 
         final String name = parser.nextTextValue();
 
-        if ((parser.nextToken() != JsonToken.FIELD_NAME) && !parser.getCurrentName().equals(VALUE_TOKEN)) {
+        if ((parser.nextToken() != JsonToken.FIELD_NAME) && !parser.currentName().equals(VALUE_TOKEN)) {
             return;
         }
 
@@ -207,5 +231,5 @@ public class SuitePreferences {
 
         elements.put(name, value);
     }
-    //endregion Load From File
+    // endregion Load From File
 }

@@ -1,10 +1,17 @@
 import java.time.LocalDateTime
 
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+}
+
 plugins {
     id 'application'
     id 'maven-publish'
     id 'edu.sc.seis.launch4j' version '3.0.5'
     id 'jacoco'
+    id "io.sentry.jvm.gradle" version "4.8.0"
 }
 
 sourceSets {

@@ -1,7 +1,7 @@
 /*
  * MegaMek - Copyright (C) 2005, 2006 Ben Mazur (bmazur@sev.org)
  * Copyright © 2013 Edward Cullen (eddy@obsessedcomputers.co.uk)
- * Copyright (c) 2014-2022 - The MegaMek Team. All Rights Reserved.
+ * Copyright (c) 2014-2024 - The MegaMek Team. All Rights Reserved.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -15,21 +15,6 @@
  */
 package megamek;
 
-import megamek.client.ui.preferences.SuitePreferences;
-import megamek.client.ui.swing.ButtonOrderPreferences;
-import megamek.client.ui.swing.MegaMekGUI;
-import megamek.client.ui.swing.util.FontHandler;
-import megamek.common.annotations.Nullable;
-import megamek.common.commandline.AbstractCommandLineParser;
-import megamek.common.commandline.ClientServerCommandLineParser;
-import megamek.common.commandline.MegaMekCommandLineFlag;
-import megamek.common.commandline.MegaMekCommandLineParser;
-import megamek.common.preference.PreferenceManager;
-import megamek.server.DedicatedServer;
-import megamek.utilities.RATGeneratorEditor;
-import org.apache.logging.log4j.LogManager;
-
-import javax.swing.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -46,24 +31,52 @@ import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
+import org.apache.logging.log4j.LogManager;
+
+import io.sentry.Sentry;
+import megamek.client.ui.preferences.SuitePreferences;
+import megamek.client.ui.swing.ButtonOrderPreferences;
+import megamek.client.ui.swing.MegaMekGUI;
+import megamek.client.ui.swing.util.FontHandler;
+import megamek.common.annotations.Nullable;
+import megamek.common.commandline.AbstractCommandLineParser;
+import megamek.common.commandline.ClientServerCommandLineParser;
+import megamek.common.commandline.MegaMekCommandLineFlag;
+import megamek.common.commandline.MegaMekCommandLineParser;
+import megamek.common.preference.PreferenceManager;
+import megamek.server.DedicatedServer;
+import megamek.utilities.RATGeneratorEditor;
+
 /**
  * This is the primary MegaMek class.
+ *
  * @author mev
  */
 public class MegaMek {
     private static final SuitePreferences mmPreferences = new SuitePreferences();
     private static final MMOptions mmOptions = new MMOptions();
-
-    private static final NumberFormat commafy = NumberFormat.getInstance();
-
+    private static final NumberFormat numberFormatter = NumberFormat.getInstance();
 
     public static void main(String... args) {
+        Sentry.init(options -> {
+            options.setDsn("https://b1720cb789ec56df7df9610dfa463c09@sentry.tapenvy.us/8");
+            options.setTracesSampleRate(0.1);
+            options.setRelease(SuiteConstants.VERSION.toString());
+            options.setDebug(true);
+            options.setEnabled(false);
+        });
+
         // First, create a global default exception handler
         Thread.setDefaultUncaughtExceptionHandler((thread, t) -> {
+            Sentry.captureException(t);
             LogManager.getLogger().error("Uncaught Exception Detected", t);
             final String name = t.getClass().getName();
             JOptionPane.showMessageDialog(null,
-                    String.format("Uncaught %s detected. Please open up an issue containing all logs, the game save file, and customs at https://github.com/MegaMek/megamek/issues", name),
+                    String.format(ErrorConstants.MEGAMEK_UNCAUGHT_EXCEPTION, name),
                     "Uncaught " + name, JOptionPane.ERROR_MESSAGE);
         });
 
@@ -74,7 +87,8 @@ public class MegaMek {
         MegaMekCommandLineParser parser = new MegaMekCommandLineParser(args);
 
         try {
-            // Parse the command line arguments and deal with them, if they are about data export or help
+            // Parse the command line arguments and deal with them, if they are about data
+            // export or help
             parser.parse();
 
             String[] restArgs = parser.getRestArgs();
@@ -84,31 +98,23 @@ public class MegaMek {
                 return;
             }
 
-            getMMPreferences().loadFromFile(MMConstants.MM_PREFERENCES_FILE);
+            mmPreferences.loadFromFile(SuiteConstants.MM_PREFERENCES_FILE);
             initializeSuiteGraphicalSetups(MMConstants.PROJECT_NAME);
 
             if (parser.host()) {
                 startHost(restArgs);
-                return;
-            }
-
-            if (parser.client()) {
+            } else if (parser.client()) {
                 startClient(restArgs);
-                return;
-            }
-
-            if (parser.quick()) {
+            } else if (parser.quick()) {
                 startQuickLoad(restArgs);
-                return;
-            }
-
-            if (parser.ratGenEditor()) {
+            } else if (parser.ratGenEditor()) {
                 RATGeneratorEditor.main(restArgs);
             } else {
                 startGUI();
             }
-        } catch (MegaMekCommandLineParser.ParseException e) {
-            LogManager.getLogger().fatal("Incorrect arguments:" + e.getMessage() + '\n' + parser.help());
+        } catch (AbstractCommandLineParser.ParseException e) {
+            LogManager.getLogger().fatal(
+                    String.format(ErrorConstants.INCORRECT_ARGUMENTS, e.getMessage(), parser.help()));
             System.exit(1);
         }
     }
@@ -128,21 +134,20 @@ public class MegaMek {
 
     /**
      * Calculates the SHA-256 hash of the MegaMek.jar file
-     * Used primarily for purposes of checksum comparison when connecting a new client.
+     * Used primarily for purposes of checksum comparison when connecting a new
+     * client.
+     *
      * @return String representing the SHA-256 hash
      */
     public static @Nullable String getMegaMekSHA256() {
         StringBuilder sb = new StringBuilder();
-        byte[] buffer = new byte[8192];
 
         // Assume UNIX/Linux, which has the jar in the root folder
         String filename = "MegaMek.jar";
-        // If it isn't UNIX/Linux, maybe it's Windows where we've stashed it in the lib folder
+        // If it isn't UNIX/Linux, maybe it's Windows where we've stashed it in the lib
+        // folder
         if (new File("lib/" + filename).exists()) {
             filename = "lib/" + filename;
-            // And if it isn't either UNIX/Linux or Windows it's got to be Mac, where it's buried inside the app
-        } else if (new File("MegaMek.app/Contents/Resources/Java/" + filename).exists()) {
-            filename = "MegaMek.app/Contents/Resources/Java/" + filename;
         }
 
         if (!new File(filename).exists()) {
@@ -155,18 +160,17 @@ public class MegaMek {
         try {
             md = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
-            LogManager.getLogger().error("", e);
+            LogManager.getLogger().error("No Such Digest Algorithm", e);
             return null;
         }
-        try (InputStream is = new FileInputStream(filename);
-             InputStream dis = new DigestInputStream(is, md)) {
-            while (0 < dis.read(buffer)) {
 
+        try (InputStream is = new FileInputStream(filename);
+                InputStream dis = new DigestInputStream(is, md)) {
+            while (0 < dis.read()) {
+                // Nothing to do
             }
-            // gets digest
-            byte[] digest = md.digest();
-            // convert the byte to hex format
-            for (byte d : digest) {
+            // convert the digest byte to hex format
+            for (byte d : md.digest()) {
                 sb.append(String.format("%02x", d));
             }
         } catch (Exception e) {
@@ -177,14 +181,15 @@ public class MegaMek {
     }
 
     /**
-     * This function returns the memory used in the heap (heap memory - free memory).
+     * This function returns the memory used in the heap (heap memory - free
+     * memory).
      *
      * @return memory used in kB
      */
     public static String getMemoryUsed() {
         long heap = Runtime.getRuntime().totalMemory();
         long free = Runtime.getRuntime().freeMemory();
-        return commafy.format((heap - free) / 1024) + " kB";
+        return numberFormatter.format((heap - free) / 1024) + " kB";
     }
 
     /**
@@ -194,7 +199,11 @@ public class MegaMek {
      * @param args the arguments to the dedicated server.
      */
     private static void startDedicatedServer(String... args) {
-        LogManager.getLogger().info("Starting Dedicated Server. " + Arrays.toString(args));
+        if (LogManager.getLogger().isInfoEnabled()) {
+            LogManager.getLogger().info(
+                    String.format(LoggingConstants.STARTING_DEDICATED_SERVER, Arrays.toString(args)));
+        }
+
         DedicatedServer.start(args);
     }
 
@@ -208,14 +217,19 @@ public class MegaMek {
         try {
             parser.parse();
         } catch (AbstractCommandLineParser.ParseException e) {
-            LogManager.getLogger().error("Incorrect arguments:" + e.getMessage() + '\n' + parser.help());
+            LogManager.getLogger().error(
+                    String.format(ErrorConstants.INCORRECT_ARGUMENTS, e.getMessage(), parser.help()));
             System.exit(1);
         }
 
         ClientServerCommandLineParser.Resolver resolver = parser.getResolver(
                 null, MMConstants.DEFAULT_PORT, MMConstants.LOCALHOST,
-                PreferenceManager.getClientPreferences().getLastPlayerName() );
-        LogManager.getLogger().info("Starting Host Server. " + Arrays.toString(args));
+                PreferenceManager.getClientPreferences().getLastPlayerName());
+
+        if (LogManager.getLogger().isInfoEnabled()) {
+            LogManager.getLogger().info(
+                    String.format(LoggingConstants.STARTING_HOST_SERVER, Arrays.toString(args)));
+        }
 
         SwingUtilities.invokeLater(() -> {
             MegaMekGUI mmg = new MegaMekGUI();
@@ -224,7 +238,7 @@ public class MegaMek {
             File gameFile = resolver.getSaveGameFile();
             mmg.startHost(resolver.password, resolver.port, resolver.registerServer,
                     resolver.announceUrl, resolver.mailPropertiesFile, gameFile,
-                    resolver.playerName );
+                    resolver.playerName);
         });
     }
 
@@ -237,14 +251,19 @@ public class MegaMek {
         try {
             parser.parse();
         } catch (AbstractCommandLineParser.ParseException e) {
-            LogManager.getLogger().error("Incorrect arguments:" + e.getMessage() + '\n' + parser.help());
+            LogManager.getLogger().error(
+                    String.format(ErrorConstants.INCORRECT_ARGUMENTS, e.getMessage(), parser.help()));
             System.exit(1);
         }
 
         ClientServerCommandLineParser.Resolver resolver = parser.getResolver(
                 null, MMConstants.DEFAULT_PORT, MMConstants.LOCALHOST,
-                PreferenceManager.getClientPreferences().getLastPlayerName() );
-        LogManager.getLogger().info("Starting Host Server. " + Arrays.toString(args));
+                PreferenceManager.getClientPreferences().getLastPlayerName());
+
+        if (LogManager.getLogger().isInfoEnabled()) {
+            LogManager.getLogger().info(
+                    String.format(LoggingConstants.STARTING_HOST_SERVER, Arrays.toString(args)));
+        }
 
         SwingUtilities.invokeLater(() -> {
             MegaMekGUI mmg = new MegaMekGUI();
@@ -252,9 +271,14 @@ public class MegaMek {
 
             File gameFile = getQuickSaveFile();
 
-            mmg.startHost(resolver.password, resolver.port, resolver.registerServer,
-                    resolver.announceUrl, resolver.mailPropertiesFile, gameFile,
-                    resolver.playerName );
+            mmg.startHost(
+                    resolver.password,
+                    resolver.port,
+                    resolver.registerServer,
+                    resolver.announceUrl,
+                    resolver.mailPropertiesFile,
+                    gameFile,
+                    resolver.playerName);
         });
     }
 
@@ -267,7 +291,8 @@ public class MegaMek {
         try {
             parser.parse();
         } catch (AbstractCommandLineParser.ParseException e) {
-            LogManager.getLogger().error("Incorrect arguments:" + e.getMessage() + '\n' + parser.help(), e);
+            LogManager.getLogger().error(
+                    String.format(ErrorConstants.INCORRECT_ARGUMENTS, e.getMessage(), parser.help()), e);
             System.exit(1);
         }
 
@@ -275,7 +300,11 @@ public class MegaMek {
                 null, MMConstants.DEFAULT_PORT, MMConstants.LOCALHOST,
                 PreferenceManager.getClientPreferences().getLastPlayerName());
 
-        LogManager.getLogger().info("Starting Client Server. " + Arrays.toString(args));
+        if (LogManager.getLogger().isInfoEnabled()) {
+            LogManager.getLogger().info(
+                    String.format(LoggingConstants.STARTING_CLIENT_SERVER, Arrays.toString(args)));
+        }
+
         SwingUtilities.invokeLater(() -> {
             MegaMekGUI mmg = new MegaMekGUI();
             mmg.start(false);
@@ -300,18 +329,18 @@ public class MegaMek {
     }
 
     /**
-     * @param originProject the launching project
+     * @param originProject  the launching project
      * @param currentProject the currently described project
      * @return the underlying information for this launch
      */
     public static String getUnderlyingInformation(final String originProject,
-                                                  final String currentProject) {
+            final String currentProject) {
         final LocalDateTime buildDate = getBuildDate();
         return String.format("Starting %s v%s\n\tBuild Date: %s\n\tToday: %s\n\tOrigin Project: %s\n\tJava Vendor: " +
-                        "%s\n\tJava Version: %s\n\tPlatform: %s %s (%s)\n\tSystem Locale: %s\n\t" +
-                        "Total memory available to %s: %,.0f GB" +
-                        "\n\tMM Code Revision: %s\n\tMML Code Revision: %s\n\tMHQ Code Revision: %s",
-                currentProject, MMConstants.VERSION, ((buildDate == null) ? "N/A" : buildDate),
+                "%s\n\tJava Version: %s\n\tPlatform: %s %s (%s)\n\tSystem Locale: %s\n\t" +
+                "Total memory available to %s: %,.0f GB" +
+                "\n\tMM Code Revision: %s\n\tMML Code Revision: %s\n\tMHQ Code Revision: %s",
+                currentProject, SuiteConstants.VERSION, ((buildDate == null) ? "N/A" : buildDate),
                 LocalDate.now(), originProject,
                 System.getProperty("java.vendor"), System.getProperty("java.version"),
                 System.getProperty("os.name"), System.getProperty("os.version"),
@@ -333,13 +362,13 @@ public class MegaMek {
         }
     }
 
-    public static File getQuickSaveFile()
-    {
+    public static File getQuickSaveFile() {
         return new File(MMConstants.QUICKSAVE_PATH, MMConstants.QUICKSAVE_FILE + MMConstants.SAVE_FILE_GZ_EXT);
     }
 
     /**
      * This is used to initialize suite-wide graphical setups.
+     *
      * @param currentProject the currently described project
      */
     public static void initializeSuiteGraphicalSetups(final String currentProject) {
@@ -353,7 +382,8 @@ public class MegaMek {
         UIManager.installLookAndFeel("Flat Darcula", "com.formdev.flatlaf.FlatDarculaLaf");
 
         // Set a couple of things to make the Swing GUI look more "Mac-like" on Macs
-        // Taken from: http://www.devdaily.com/apple/mac/java-mac-native-look/Introduction.shtml
+        // Taken from:
+        // http://www.devdaily.com/apple/mac/java-mac-native-look/Introduction.shtml
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         System.setProperty("com.apple.mrj.application.apple.menu.about.name", currentProject);
 

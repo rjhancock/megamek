@@ -40,6 +40,7 @@ import megamek.ai.dataset.GameData.MinefieldData;
 
 /**
  * <p>Serializer for GameData to TSV format.</p>
+ *
  * @author Luana Coppio
  */
 public class GameDataSerializer extends EntityDataSerializer<GameData.Field, GameData> {
@@ -56,7 +57,9 @@ public class GameDataSerializer extends EntityDataSerializer<GameData.Field, Gam
 
     /**
      * Serializes game data to multiple lines of TSV format.
+     *
      * @param data The game data to serialize
+     *
      * @return A TSV-formatted strings with multiple lines
      */
     @Override
@@ -95,8 +98,7 @@ public class GameDataSerializer extends EntityDataSerializer<GameData.Field, Gam
                       String.valueOf(minefield.getY()),
                       String.valueOf(minefield.getType()),
                       String.valueOf(minefield.getPlayerId()),
-                      String.valueOf(minefield.getDamage())
-                ));
+                      String.valueOf(minefield.getDamage())));
             }
         }
 

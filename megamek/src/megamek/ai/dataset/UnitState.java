@@ -45,6 +45,7 @@ import megamek.common.UnitRole;
 
 /**
  * Flexible container for unit state data using a map-based approach with enum keys.
+ *
  * @author Luana Coppio
  */
 public class UnitState extends EntityDataMap<UnitState.Field> {
@@ -98,8 +99,10 @@ public class UnitState extends EntityDataMap<UnitState.Field> {
 
     /**
      * Creates a UnitStateMap from an Entity.
+     *
      * @param entity The entity to extract state from
-     * @param game The game reference
+     * @param game   The game reference
+     *
      * @return A populated UnitStateMap
      */
     public static UnitState fromEntity(Entity entity, Game game) {
@@ -118,11 +121,9 @@ public class UnitState extends EntityDataMap<UnitState.Field> {
 
         // Position and movement
         if (entity.getPosition() != null) {
-            map.put(Field.X, entity.getPosition().getX())
-                  .put(Field.Y, entity.getPosition().getY());
+            map.put(Field.X, entity.getPosition().getX()).put(Field.Y, entity.getPosition().getY());
         } else {
-            map.put(Field.X, -1)
-                  .put(Field.Y, -1);
+            map.put(Field.X, -1).put(Field.Y, -1);
         }
 
         map.put(Field.FACING, entity.getFacing())
@@ -160,8 +161,7 @@ public class UnitState extends EntityDataMap<UnitState.Field> {
               .put(Field.ARMOR_BACK_P, EntityFeatureUtils.getTargetBackHealthStats(entity));
 
         // Equipment and capabilities
-        map.put(Field.IS_BOT, entity.getOwner().isBot())
-              .put(Field.HAS_ECM, entity.hasActiveECM());
+        map.put(Field.IS_BOT, entity.getOwner().isBot()).put(Field.HAS_ECM, entity.hasActiveECM());
 
         // Weapon information
         List<Integer> weaponData = WeaponDataEncoder.getEncodedWeaponData(entity);

@@ -36,6 +36,7 @@ import megamek.common.MapSettings;
 
 /**
  * Flexible container for map settings data using a map-based approach with enum keys.
+ *
  * @author Luana Coppio
  */
 public class MapSettingsData extends EntityDataMap<MapSettingsData.Field> {
@@ -44,11 +45,7 @@ public class MapSettingsData extends EntityDataMap<MapSettingsData.Field> {
      * Enum defining all available map settings fields.
      */
     public enum Field {
-        THEME,
-        CITY_TYPE,
-        MAP_SIZE,
-        MAP_WIDTH,
-        MAP_HEIGHT
+        THEME, CITY_TYPE, MAP_SIZE, MAP_WIDTH, MAP_HEIGHT
     }
 
     /**
@@ -60,7 +57,9 @@ public class MapSettingsData extends EntityDataMap<MapSettingsData.Field> {
 
     /**
      * Creates a MapSettingsData from MapSettings.
+     *
      * @param settings The map settings to extract data from
+     *
      * @return A populated MapSettingsData
      */
     public static MapSettingsData fromMapSettings(MapSettings settings) {

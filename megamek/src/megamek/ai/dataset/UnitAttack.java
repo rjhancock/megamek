@@ -45,6 +45,7 @@ import megamek.common.enums.AimingMode;
 
 /**
  * Flexible container for unit attack data using a map-based approach with enum keys.
+ *
  * @author Luana Coppio
  */
 public class UnitAttack extends EntityDataMap<UnitAttack.Field> {
@@ -90,8 +91,10 @@ public class UnitAttack extends EntityDataMap<UnitAttack.Field> {
 
     /**
      * Creates a UnitAttackMap from an AbstractAttackAction.
+     *
      * @param attackAction The attack action to extract data from
-     * @param game The game reference
+     * @param game         The game reference
+     *
      * @return A populated UnitAttackMap
      */
     public static UnitAttack fromAttackAction(AbstractAttackAction attackAction, Game game) {
@@ -109,11 +112,9 @@ public class UnitAttack extends EntityDataMap<UnitAttack.Field> {
                   .put(Field.ROLE, attacker.getRole() == null ? UnitRole.NONE : attacker.getRole());
 
             if (attacker.isDeployed() && attacker.getPosition() != null) {
-                map.put(Field.X, attacker.getPosition().getX())
-                      .put(Field.Y, attacker.getPosition().getY());
+                map.put(Field.X, attacker.getPosition().getX()).put(Field.Y, attacker.getPosition().getY());
             } else {
-                map.put(Field.X, -1)
-                      .put(Field.Y, -1);
+                map.put(Field.X, -1).put(Field.Y, -1);
             }
 
             map.put(Field.FACING, attacker.getFacing());
@@ -131,15 +132,12 @@ public class UnitAttack extends EntityDataMap<UnitAttack.Field> {
         // Target information
         var target = attackAction.getTarget(game);
         if (target != null) {
-            map.put(Field.TARGET_ID, target.getId())
-                  .put(Field.TARGET_TYPE, target.getClass().getSimpleName());
+            map.put(Field.TARGET_ID, target.getId()).put(Field.TARGET_TYPE, target.getClass().getSimpleName());
 
             if (!(target instanceof INarcPod) && target.getPosition() != null) {
-                map.put(Field.TARGET_X, target.getPosition().getX())
-                      .put(Field.TARGET_Y, target.getPosition().getY());
+                map.put(Field.TARGET_X, target.getPosition().getX()).put(Field.TARGET_Y, target.getPosition().getY());
             } else {
-                map.put(Field.TARGET_X, -1)
-                      .put(Field.TARGET_Y, -1);
+                map.put(Field.TARGET_X, -1).put(Field.TARGET_Y, -1);
             }
 
             if (target instanceof Entity entity) {
@@ -147,9 +145,7 @@ public class UnitAttack extends EntityDataMap<UnitAttack.Field> {
                       .put(Field.TARGET_ROLE, firstNonNull(entity.getRole(), UnitRole.NONE))
                       .put(Field.TARGET_FACING, entity.getFacing());
             } else {
-                map.put(Field.TARGET_PLAYER_ID, -1)
-                      .put(Field.TARGET_ROLE, UnitRole.NONE)
-                      .put(Field.TARGET_FACING, -1);
+                map.put(Field.TARGET_PLAYER_ID, -1).put(Field.TARGET_ROLE, UnitRole.NONE).put(Field.TARGET_FACING, -1);
             }
         } else {
             // Default values for missing target
@@ -195,10 +191,7 @@ public class UnitAttack extends EntityDataMap<UnitAttack.Field> {
             boolean gta = weaponAttackAction.isGroundToAir(game);
             boolean gtg = !ata && !gta && !atg;
 
-            map.put(Field.ATA, ata)
-                  .put(Field.ATG, atg)
-                  .put(Field.GTA, gta)
-                  .put(Field.GTG, gtg);
+            map.put(Field.ATA, ata).put(Field.ATG, atg).put(Field.GTA, gta).put(Field.GTG, gtg);
         }
 
         return map;

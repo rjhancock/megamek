@@ -33,17 +33,16 @@ public class SuiteOptions {
     // endregion Constructors
 
     // region Temporary
+
     /**
-     * This is a temporary Locale getter, which sets the stage for suite-wide
-     * localization.
+     * This is a temporary Locale getter, which sets the stage for suite-wide localization.
      */
     public Locale getLocale() {
         return Locale.US;
     }
 
     /**
-     * This is a temporary Locale getter for dates, which sets the stage for
-     * suite-wide localization.
+     * This is a temporary Locale getter for dates, which sets the stage for suite-wide localization.
      */
     public Locale getDateLocale() {
         return Locale.US;

@@ -25,22 +25,18 @@ import java.nio.file.Files;
 import megamek.common.Configuration;
 
 /**
- * This class contains static methods to obtain the current code revision
- * hashCode of all three programs.
- *
- * The code revision can be used to check out the precise point in the code when
- * available from a log file.
- *
- * In the IDE, revisions may not be fully available. E.g. when working in MML,
- * the MM directories are not
- * used.
+ * This class contains static methods to get the current code revision hashCode of all three programs.
+ * <p>
+ * The code revision can be used to check out the precise point in the code when available from a log file.
+ * <p>
+ * In the IDE, revisions may not be fully available. E.g. when working in MML, the MM directories are not used.
  */
 public final class Revision {
 
     /**
      * @return The current MM code revision (e.g.
-     *         "eba3a49e1006e51b16db12446caf5e43f57a18a7"), or "Unknown"
-     *         if not available.
+     *       "eba3a49e1006e51b16db12446caf5e43f57a18a7"), or "Unknown"
+     *       if not available.
      */
     public static String mmRevision() {
         return instance.mmRevision;
@@ -48,8 +44,8 @@ public final class Revision {
 
     /**
      * @return The current MML code revision (e.g.
-     *         "eba3a49e1006e51b16db12446caf5e43f57a18a7"), or "Unknown"
-     *         if not available.
+     *       "eba3a49e1006e51b16db12446caf5e43f57a18a7"), or "Unknown"
+     *       if not available.
      */
     public static String mmlRevision() {
         return instance.mmlRevision;
@@ -57,8 +53,8 @@ public final class Revision {
 
     /**
      * @return The current MHQ code revision (e.g.
-     *         "eba3a49e1006e51b16db12446caf5e43f57a18a7"), or "Unknown"
-     *         if not available.
+     *       "eba3a49e1006e51b16db12446caf5e43f57a18a7"), or "Unknown"
+     *       if not available.
      */
     public static String mhqRevision() {
         return instance.mhqRevision;

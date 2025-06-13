@@ -47,15 +47,16 @@ import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
 
 import io.sentry.Sentry;
-import megamek.client.ui.preferences.SuitePreferences;
 import megamek.client.ui.clientGUI.ButtonOrderPreferences;
 import megamek.client.ui.clientGUI.MegaMekGUI;
+import megamek.client.ui.preferences.SuitePreferences;
 import megamek.client.ui.util.FontHandler;
 import megamek.common.annotations.Nullable;
 import megamek.common.commandline.AbstractCommandLineParser;
 import megamek.common.commandline.ClientServerCommandLineParser;
 import megamek.common.commandline.MegaMekCommandLineFlag;
 import megamek.common.commandline.MegaMekCommandLineParser;
+import megamek.common.internationalization.I18NMessages;
 import megamek.common.net.marshalling.SanityInputFilter;
 import megamek.common.preference.PreferenceManager;
 import megamek.logging.MMLogger;
@@ -76,6 +77,8 @@ public class MegaMek {
 
     private static final MMLogger LOGGER = MMLogger.create(MegaMek.class);
     private static final SanityInputFilter sanityInputFilter = new SanityInputFilter();
+
+    private static final I18NMessages i18nMessages = new I18NMessages(MegaMek.class);
 
     public static void main(String... args) {
         ObjectInputFilter.Config.setSerialFilter(sanityInputFilter);
@@ -234,7 +237,7 @@ public class MegaMek {
     }
 
     /**
-     * Skip splash GUI, starts a host with using quicksave file
+     * Skip splash GUI, starts a host with using a quicksave file
      */
     private static void startQuickLoad(String... args) {
         ClientServerCommandLineParser parser = new ClientServerCommandLineParser(args,
@@ -246,7 +249,7 @@ public class MegaMek {
         try {
             parser.parse();
         } catch (AbstractCommandLineParser.ParseException e) {
-            LOGGER.error(e, String.format(MMLoggingConstants.AP_INCORRECT_ARGUMENTS, e.getMessage(), parser.help()));
+            LOGGER.error(e, MMLoggingConstants.AP_INCORRECT_ARGUMENTS, e.getMessage(), parser.help());
             System.exit(1);
         }
 
@@ -286,7 +289,7 @@ public class MegaMek {
         try {
             parser.parse();
         } catch (AbstractCommandLineParser.ParseException e) {
-            LOGGER.error(e, String.format(MMLoggingConstants.AP_INCORRECT_ARGUMENTS, e.getMessage(), parser.help()));
+            LOGGER.error(e, MMLoggingConstants.AP_INCORRECT_ARGUMENTS, e.getMessage(), parser.help());
             System.exit(1);
         }
 
@@ -397,15 +400,13 @@ public class MegaMek {
     public static void initializeSuiteGraphicalSetups(final String currentProject) {
         // Setup Fonts
         FontHandler.initialize();
+        
+        UIManager.installLookAndFeel(i18nMessages.getString("flat_light"), "com.formdev.flatlaf.FlatLightLaf");
+        UIManager.installLookAndFeel(i18nMessages.getString("flat_intellij"), "com.formdev.flatlaf.FlatIntelliJLaf");
+        UIManager.installLookAndFeel(i18nMessages.getString("flat_dark"), "com.formdev.flatlaf.FlatDarkLaf");
+        UIManager.installLookAndFeel(i18nMessages.getString("flat_dracula"), "com.formdev.flatlaf.FlatDarculaLaf");
 
-        // Setup Themes
-        UIManager.installLookAndFeel("Flat Light", "com.formdev.flatlaf.FlatLightLaf");
-        UIManager.installLookAndFeel("Flat IntelliJ", "com.formdev.flatlaf.FlatIntelliJLaf");
-        UIManager.installLookAndFeel("Flat Dark", "com.formdev.flatlaf.FlatDarkLaf");
-        UIManager.installLookAndFeel("Flat Darcula", "com.formdev.flatlaf.FlatDarculaLaf");
-
-        // Set a couple of things to make the Swing GUI look more "Mac-like" on Macs
-        // Taken from:
+        // Set a couple of things to make the Swing GUI look more "Mac-like" on Macs Taken from:
         // http://www.devdaily.com/apple/mac/java-mac-native-look/Introduction.shtml
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         System.setProperty("com.apple.mrj.application.apple.menu.about.name", currentProject);

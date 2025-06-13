@@ -31,7 +31,7 @@ public final class MMConstants extends SuiteConstants {
     // region General Constants
     public static final String PROJECT_NAME = "MegaMek";
     public static final String MUL_URL_PREFIX = "http://www.masterunitlist.info/Unit/Details/";
-    public static final String BT_URL_SHRAPNEL = "https://bg.battletech.com/shrapnel/";
+    public static final String BT_URL_SHRAPNEL = "https://battletech.com/shrapnel/";
     /**
      * When this text is found in the source field, the Mek View will display a link to {@link #BT_URL_SHRAPNEL}
      */
@@ -57,19 +57,19 @@ public final class MMConstants extends SuiteConstants {
     public static final String GIVEN_NAME_MALE_FILE = Paths.get("data/names/maleGivenNames.csv").toString();
     public static final String SURNAME_FILE = Paths.get("data/names/surnames.csv").toString();
     public static final String BOT_README_FILE_PATH = Paths.get("docs/help/en/princess/PrincessBotDocumentation.html")
-          .toString();
+                                                            .toString();
     public static final String BOARD_README_FILE_PATH = Paths.get("docs/Map Editor-readme.txt").toString();
     public static final String MEGAMEK_README_FILE_PATH = Paths.get("docs/README.md").toString();
     public static final String USER_DIR_README_FILE = Paths.get("docs/help/en/UserDir/UserDirHelp.html").toString();
     public static final String USER_NAME_FACTIONS_DIRECTORY_PATH = Paths.get("userdata/data/names/factions/")
-          .toString();
+                                                                         .toString();
     public static final String USER_CALLSIGN_FILE_PATH = Paths.get("userdata/data/names/callsigns.csv").toString();
     public static final String USER_GIVEN_NAME_FEMALE_FILE = Paths.get("userdata/data/names/femaleGivenNames.csv")
-          .toString();
+                                                                   .toString();
     public static final String USER_HISTORICAL_ETHNICITY_FILE = Paths.get("userdata/data/names/historicalEthnicity.csv")
-          .toString();
+                                                                      .toString();
     public static final String USER_GIVEN_NAME_MALE_FILE = Paths.get("userdata/data/names/maleGivenNames.csv")
-          .toString();
+                                                                 .toString();
     public static final String USER_SURNAME_FILE = Paths.get("userdata/data/names/surnames.csv").toString();
     public static final String ERAS_FILE_PATH = Paths.get("data/universe/eras.xml").toString();
     public static final String USER_LOADOUTS_DIR = Paths.get("userdata/data/").toString();

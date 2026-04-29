@@ -877,12 +877,10 @@ class TWGameManagerTest {
 
         ArmorType reactiveType = ArmorType.of(ArmorType.T_ARMOR_REACTIVE, false);
 
-
         // Initialize armor critical slots (normally done by unit loader)
         for (int i=1; i<=12; i++) {
             Mounted reactiveMounted = Mounted.createMounted(mek, reactiveType);
             mek.addEquipment(reactiveMounted, Mek.LOC_LEFT_TORSO, false);
-            //mek.setCritical(Mek.LOC_LEFT_TORSO, i, new CriticalSlot(reactiveMounted));
         }
 
         game.addEntity(mek);
@@ -913,13 +911,11 @@ class TWGameManagerTest {
 
         ArmorType reactiveType = ArmorType.of(ArmorType.T_ARMOR_REACTIVE, false);
 
-
         // Initialize armor critical slots (normally done by unit loader)
         // Note that we leave one slot empty in this case
         for (int i=1; i<=11; i++) {
             Mounted reactiveMounted = Mounted.createMounted(mek, reactiveType);
             mek.addEquipment(reactiveMounted, Mek.LOC_LEFT_TORSO, false);
-            //mek.setCritical(Mek.LOC_LEFT_TORSO, i, new CriticalSlot(reactiveMounted));
         }
 
         game.addEntity(mek);

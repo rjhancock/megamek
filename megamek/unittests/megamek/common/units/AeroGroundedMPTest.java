@@ -33,8 +33,6 @@
 package megamek.common.units;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
 
 import megamek.common.MPCalculationSetting;
 import megamek.common.equipment.EquipmentType;
@@ -43,16 +41,21 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Regression tests for issue #8187: grounded Spheroid DropShips had non-zero run MP because {@link Aero#getRunMP} on
- * the grounded path was bypassing {@link Aero#getWalkMP}, which is where the "spheroid-grounded -> 0, aerodyne-grounded
- * -> thrust/2" rule (Total Warfare p.86) is applied.
+ * Regression tests for issue #8187: grounded Spheroid DropShips had non-zero run MP because
+ * {@link Aero#getRunMP} on the grounded path was bypassing {@link Aero#getWalkMP}, which is where
+ * the "spheroid-grounded -> 0, aerodyne-grounded -> thrust/2" rule (Total Warfare p.86) is applied.
  *
  * <p>The fix restores the call chain so {@code getRunMP} on a grounded aero defers to the grounded
  * {@code getWalkMP} (no run multiplier on the ground per rules).</p>
+ *
+ * <p>Grounded vs airborne is driven by real entity state ({@link Aero#setAltitude} plus the
+ * non-aerospace movement mode {@link EntityMovementMode#WHEELED} for grounded), matching the
+ * convention used by the bridge movement tests where grounded aero is treated as a wheeled tank.</p>
  */
 class AeroGroundedMPTest {
 
     private static final int THRUST = 6;
+    private static final int AIRBORNE_ALTITUDE = 5;
 
     @BeforeAll
     static void setUp() {
@@ -63,9 +66,15 @@ class AeroGroundedMPTest {
         Dropship dropship = new Dropship();
         dropship.setSpheroid(spheroid);
         dropship.setOriginalWalkMP(THRUST);
-        Dropship spy = spy(dropship);
-        doReturn(airborne).when(spy).isAirborne();
-        return spy;
+        if (airborne) {
+            dropship.setAltitude(AIRBORNE_ALTITUDE);
+        } else {
+            dropship.setAltitude(0);
+            // Use a non-aerospace mode so isAirborne() relies purely on altitude.
+            // Mirrors BridgeTest's convention of treating grounded aero as a wheeled tank.
+            dropship.setMovementMode(EntityMovementMode.WHEELED);
+        }
+        return dropship;
     }
 
     @Test

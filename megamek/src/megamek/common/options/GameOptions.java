@@ -74,7 +74,7 @@ public class GameOptions extends BasicGameOptions {
         super();
     }
 
-    public static void saveOptions(List<IBasicOption> options) {
+    public static void saveOptions(Vector<IBasicOption> options) {
         saveOptions(options, GAME_OPTIONS_FILE_NAME);
     }
 

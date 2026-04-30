@@ -42,6 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
+import java.util.function.Supplier;
 import javax.swing.JOptionPane;
 
 import megamek.client.event.BoardViewEvent;
@@ -332,13 +333,12 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
             if (groundObjects.size() > 1) {
                 String title = "Choose Cargo to Place";
                 String body = "Choose the cargo to place:";
-                clientgui.suspendBoardTooltips();
-                try {
-                    toDeploy = (ICarryable) JOptionPane.showInputDialog(clientgui.getFrame(),
-                          body, title, JOptionPane.QUESTION_MESSAGE, null,
-                          groundObjects.toArray(), groundObjects.getFirst());
-                } finally {
-                    clientgui.activateBoardTooltips();
+                toDeploy = runWithSuspendedTooltips(() ->
+                      (ICarryable) JOptionPane.showInputDialog(clientgui.getFrame(),
+                            body, title, JOptionPane.QUESTION_MESSAGE, null,
+                            groundObjects.toArray(), groundObjects.getFirst()));
+                if (toDeploy == null) {
+                    return;
                 }
             }
 
@@ -379,22 +379,15 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
                 if (sea) {
                     SeaMineDepthDialog smd = new SeaMineDepthDialog(
                           clientgui.getFrame(), hex.depth());
-                    clientgui.suspendBoardTooltips();
-                    try {
-                        smd.setVisible(true);
-                    } finally {
-                        clientgui.activateBoardTooltips();
-                    }
+                    runWithSuspendedTooltips(() -> smd.setVisible(true));
 
                     depth = smd.getDepth();
+                    if (depth < 0) {
+                        return;
+                    }
                 }
                 MineDensityDialog mfd = new MineDensityDialog(clientgui.getFrame());
-                clientgui.suspendBoardTooltips();
-                try {
-                    mfd.setVisible(true);
-                } finally {
-                    clientgui.activateBoardTooltips();
-                }
+                runWithSuspendedTooltips(() -> mfd.setVisible(true));
 
                 if (mfd.getDensity() > 0) {
                     mf = Minefield.createMinefield(coords, p.getId(),
@@ -408,12 +401,7 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
                 }
             } else if (deployingCommandMinefields()) {
                 MineDensityDialog mfd = new MineDensityDialog(clientgui.getFrame());
-                clientgui.suspendBoardTooltips();
-                try {
-                    mfd.setVisible(true);
-                } finally {
-                    clientgui.activateBoardTooltips();
-                }
+                runWithSuspendedTooltips(() -> mfd.setVisible(true));
 
                 if (mfd.getDensity() > 0) {
                     mf = Minefield.createMinefield(coords, p.getId(),
@@ -427,12 +415,7 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
                 }
             } else if (deployingActiveMinefields()) {
                 MineDensityDialog mfd = new MineDensityDialog(clientgui.getFrame());
-                clientgui.suspendBoardTooltips();
-                try {
-                    mfd.setVisible(true);
-                } finally {
-                    clientgui.activateBoardTooltips();
-                }
+                runWithSuspendedTooltips(() -> mfd.setVisible(true));
 
                 if (mfd.getDensity() > 0) {
                     mf = Minefield.createMinefield(coords, p.getId(),
@@ -445,12 +428,7 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
                 }
             } else if (deployingInfernoMinefields()) {
                 MineDensityDialog mfd = new MineDensityDialog(clientgui.getFrame());
-                clientgui.suspendBoardTooltips();
-                try {
-                    mfd.setVisible(true);
-                } finally {
-                    clientgui.activateBoardTooltips();
-                }
+                runWithSuspendedTooltips(() -> mfd.setVisible(true));
 
                 if (mfd.getDensity() > 0) {
                     mf = Minefield.createMinefield(coords, p.getId(),
@@ -464,21 +442,11 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
                 }
             } else if (deployingVibrabombMinefields()) {
                 MineDensityDialog mfd = new MineDensityDialog(clientgui.getFrame());
-                clientgui.suspendBoardTooltips();
-                try {
-                    mfd.setVisible(true);
-                } finally {
-                    clientgui.activateBoardTooltips();
-                }
+                runWithSuspendedTooltips(() -> mfd.setVisible(true));
 
                 VibrabombSettingDialog vsd = new VibrabombSettingDialog(
                       clientgui.getFrame());
-                clientgui.suspendBoardTooltips();
-                try {
-                    vsd.setVisible(true);
-                } finally {
-                    clientgui.activateBoardTooltips();
-                }
+                runWithSuspendedTooltips(() -> vsd.setVisible(true));
 
                 if (mfd.getDensity() > 0) {
                     mf = Minefield.createMinefield(coords, p.getId(),
@@ -499,12 +467,7 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
                 }
                 // Get weight threshold setting from dialog
                 EMPMineSettingDialog esd = new EMPMineSettingDialog(clientgui.getFrame());
-                clientgui.suspendBoardTooltips();
-                try {
-                    esd.setVisible(true);
-                } finally {
-                    clientgui.activateBoardTooltips();
-                }
+                runWithSuspendedTooltips(() -> esd.setVisible(true));
 
                 if (esd.getSetting() > 0) {
                     // Fixed density of 5 since EMP mines are one-use
@@ -645,6 +608,34 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
         clientgui.getClient().sendDeployGroundObjects(clientgui.getClient().getGame().getGroundObjects());
         clientgui.getClient().sendDeployMinefields(deployedMinefields);
         clientgui.getClient().sendPlayerInfo();
+    }
+
+    /**
+     * Suspends BoardView hex tooltips for the duration of the given action so they cannot draw over a modal dialog, and
+     * re-activates them when the action returns.
+     */
+    private void runWithSuspendedTooltips(Runnable action) {
+        clientgui.suspendBoardTooltips();
+        try {
+            action.run();
+        } finally {
+            clientgui.activateBoardTooltips();
+        }
+    }
+
+    /**
+     * Suspends BoardView hex tooltips for the duration of the given action so they cannot draw over a modal dialog, and
+     * re-activates them when the action returns.
+     *
+     * @return the value supplied by the action
+     */
+    private <T> T runWithSuspendedTooltips(Supplier<T> action) {
+        clientgui.suspendBoardTooltips();
+        try {
+            return action.get();
+        } finally {
+            clientgui.activateBoardTooltips();
+        }
     }
 
     private void setConventionalEnabled(int nbr) {

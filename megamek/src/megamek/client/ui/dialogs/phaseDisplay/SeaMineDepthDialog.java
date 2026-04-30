@@ -58,7 +58,7 @@ public class SeaMineDepthDialog extends JDialog implements ActionListener {
     private static final long serialVersionUID = -7642956136536119067L;
     private final JButton butOk = new JButton(Messages.getString("Okay"));
     private final JComboBox<String> choDepth = new JComboBox<>();
-    private int depth;
+    private int depth = -1;
 
     public SeaMineDepthDialog(JFrame p, int totalDepth) {
         super(p, Messages.getString("MineDensityDialog.title"), true);

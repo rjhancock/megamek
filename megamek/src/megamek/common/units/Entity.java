@@ -7676,22 +7676,28 @@ public abstract class Entity extends TurnOrdered
                 // PLAYTEST3 AMS shoots twice handling
                 // Assuming AMS has not been used at all yet, so both shots are available.
                 final WeaponAttackAction waa = Compute.getHighestExpectedDamage(getGame(), attacksInArc, true);
-                waa.addCounterEquipment(ams);
-                targets.add(waa);
-                if (attacksInArc.size() > 1) {
-                    final WeaponAttackAction secondWaa = Compute.getSecondHighestExpectedDamage(getGame(), attacksInArc,
-                          true);
-                    if (secondWaa != null) {
-                        secondWaa.addCounterEquipment(ams);
-                        targets.add(secondWaa);
+                if (waa != null) {
+                    waa.addCounterEquipment(ams);
+                    targets.add(waa);
+                    if (attacksInArc.size() > 1) {
+                        final WeaponAttackAction secondWaa = Compute.getSecondHighestExpectedDamage(getGame(),
+                              attacksInArc,
+                              true);
+                        if (secondWaa != null) {
+                            secondWaa.addCounterEquipment(ams);
+                            targets.add(secondWaa);
+                        }
                     }
                 }
             } else {
                 // Otherwise, find the most dangerous salvo by expected damage and target it this ensures that only 1
                 // AMS targets the strike. Use for non-bays.
                 final WeaponAttackAction waa = Compute.getHighestExpectedDamage(getGame(), attacksInArc, true);
-                waa.addCounterEquipment(ams);
-                targets.add(waa);
+                // Null waa indicates no threat detected, as in Copperhead munition with no tagged targets
+                if (waa != null) {
+                    waa.addCounterEquipment(ams);
+                    targets.add(waa);
+                }
             }
         });
     }

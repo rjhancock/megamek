@@ -40,6 +40,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Serial;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Vector;
 import javax.xml.namespace.QName;
 
@@ -71,6 +72,36 @@ public class GameOptions extends BasicGameOptions {
 
     public GameOptions() {
         super();
+    }
+
+    public static void saveOptions(Vector<IBasicOption> options) {
+        saveOptions(options, GAME_OPTIONS_FILE_NAME);
+    }
+
+    /**
+     * Saves the given <code>Vector</code> of <code>IBasicOption</code>
+     *
+     * @param options <code>Vector</code> of <code>IBasicOption</code>
+     * @param file    string with the name of the file
+     */
+    public static void saveOptions(Vector<IBasicOption> options, String file) {
+        try {
+            JAXBContext jc = JAXBContext.newInstance(GameOptionsXML.class, Option.class, BasicOption.class);
+
+            Marshaller marshaller = jc.createMarshaller();
+            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+
+            // The default header has the encoding and standalone properties
+            marshaller.setProperty(Marshaller.JAXB_FRAGMENT, true);
+            marshaller.setProperty("org.glassfish.jaxb.xmlHeaders", "<?xml version=\"1.0\"?>");
+
+            JAXBElement<GameOptionsXML> element = new JAXBElement<>(new QName("options"), GameOptionsXML.class,
+                  new GameOptionsXML(options));
+
+            marshaller.marshal(element, new File(file));
+        } catch (Exception ex) {
+            logger.error("Failed writing Game Options XML", ex);
+        }
     }
 
     @Override
@@ -424,36 +455,6 @@ public class GameOptions extends BasicGameOptions {
         return option;
     }
 
-    public static void saveOptions(Vector<IBasicOption> options) {
-        saveOptions(options, GAME_OPTIONS_FILE_NAME);
-    }
-
-    /**
-     * Saves the given <code>Vector</code> of <code>IBasicOption</code>
-     *
-     * @param options <code>Vector</code> of <code>IBasicOption</code>
-     * @param file    string with the name of the file
-     */
-    public static void saveOptions(Vector<IBasicOption> options, String file) {
-        try {
-            JAXBContext jc = JAXBContext.newInstance(GameOptionsXML.class, Option.class, BasicOption.class);
-
-            Marshaller marshaller = jc.createMarshaller();
-            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-
-            // The default header has the encoding and standalone properties
-            marshaller.setProperty(Marshaller.JAXB_FRAGMENT, true);
-            marshaller.setProperty("org.glassfish.jaxb.xmlHeaders", "<?xml version=\"1.0\"?>");
-
-            JAXBElement<GameOptionsXML> element = new JAXBElement<>(new QName("options"), GameOptionsXML.class,
-                  new GameOptionsXML(options));
-
-            marshaller.marshal(element, new File(file));
-        } catch (Exception ex) {
-            logger.error("Failed writing Game Options XML", ex);
-        }
-    }
-
     /*
      * (non-Javadoc)
      *
@@ -463,46 +464,6 @@ public class GameOptions extends BasicGameOptions {
     protected AbstractOptionsInfo getOptionsInfoImp() {
         return GameOptionsInfo.getInstance();
     }
-
-    private static class GameOptionsInfo extends AbstractOptionsInfo {
-        private static final AbstractOptionsInfo instance = new GameOptionsInfo();
-
-        protected GameOptionsInfo() {
-            super("GameOptionsInfo");
-        }
-
-        public static AbstractOptionsInfo getInstance() {
-            return instance;
-        }
-    }
-
-    /**
-     * A helper class for the XML binding.
-     */
-    @XmlRootElement(name = "options")
-    @XmlAccessorType(value = XmlAccessType.FIELD)
-    private static class GameOptionsXML {
-        @XmlElement(name = "gameoption", type = BasicOption.class)
-        private Vector<IBasicOption> options;
-
-        GameOptionsXML(final Vector<IBasicOption> options) {
-            this.options = options;
-        }
-
-        /**
-         * Required for JAXB.
-         */
-        @SuppressWarnings(value = "unused")
-        private GameOptionsXML() {
-
-        }
-
-        public Vector<IBasicOption> getOptions() {
-            return options;
-        }
-    }
-
-    // region MekHQ I/O
 
     /**
      * This is used by MekHQ to write the game options to the standard file
@@ -591,6 +552,46 @@ public class GameOptions extends BasicGameOptions {
             } catch (Exception e) {
                 logger.error("Failed to parse Game Option Node", e);
             }
+        }
+    }
+
+    // region MekHQ I/O
+
+    private static class GameOptionsInfo extends AbstractOptionsInfo {
+        private static final AbstractOptionsInfo instance = new GameOptionsInfo();
+
+        protected GameOptionsInfo() {
+            super("GameOptionsInfo");
+        }
+
+        public static AbstractOptionsInfo getInstance() {
+            return instance;
+        }
+    }
+
+    /**
+     * A helper class for the XML binding.
+     */
+    @XmlRootElement(name = "options")
+    @XmlAccessorType(value = XmlAccessType.FIELD)
+    private static class GameOptionsXML {
+        @XmlElement(name = "gameoption", type = BasicOption.class)
+        private Vector<IBasicOption> options;
+
+        GameOptionsXML(final Vector<IBasicOption> options) {
+            this.options = options;
+        }
+
+        /**
+         * Required for JAXB.
+         */
+        @SuppressWarnings(value = "unused")
+        private GameOptionsXML() {
+
+        }
+
+        public Vector<IBasicOption> getOptions() {
+            return options;
         }
     }
     // endregion MekHQ I/O

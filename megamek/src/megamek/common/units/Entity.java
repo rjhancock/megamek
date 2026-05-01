@@ -7671,7 +7671,10 @@ public abstract class Entity extends TurnOrdered
             } else if (ams.getType().hasFlag(WeaponType.F_PD_BAY)) {
                 // Point defense bays are assigned to the attack with the greatest threat Unlike single AMS, PD bays
                 // can gang up on 1 attack
-                Compute.getHighestExpectedDamage(getGame(), attacksInArc, true).addCounterEquipment(ams);
+                final WeaponAttackAction waa = Compute.getHighestExpectedDamage(getGame(), attacksInArc, true);
+                if (waa != null) {
+                    waa.addCounterEquipment(ams);
+                }
             } else if (gameOptions().booleanOption(OptionsConstants.PLAYTEST_3)) {
                 // PLAYTEST3 AMS shoots twice handling
                 // Assuming AMS has not been used at all yet, so both shots are available.
